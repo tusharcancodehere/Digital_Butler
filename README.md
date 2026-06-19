@@ -50,3 +50,4 @@ Follow these steps to get your Digital Butler up and running on your local machi
 ```bash
    git clone [https://github.com/yourusername/digital-butler.git](https://github.com/yourusername/digital-butler.git)
    cd digital-butler
+   python main.py
