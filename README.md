@@ -1,4 +1,4 @@
-<h1 align="center">🤵‍♂️ Digital Butler</h1>
+# 🤵‍♂️ Digital Butler
 
 <p align="center">
   <img src="https://img.shields.io/badge/Python-3.8+-blue.svg" alt="Python Version">
@@ -7,47 +7,77 @@
 </p>
 
 <p align="center">
-  <strong>An automated background service that actively manages your digital workspace based on customizable rules.</strong>
+  <strong>An automated local script that cleans, sorts, archives, and manages your digital workspace with smart reporting.</strong>
 </p>
 
 ---
 
 ## 📖 About The Project
 
-Instead of relying on a simple, manual file sorter, **Digital Butler** runs silently in the background, watching your designated local directories (like `Downloads` and `Desktop`). It organizes files by extension, cleans up temporary clutter, archives old data, and seamlessly backs up critical documents to the cloud.
+**Digital Butler** is a Python automation script built to take over your boring computer chores. Instead of manually organizing messy folders, this script scans your target directories, groups your files cleanly, purges old temporary clutter, archives old photos/videos, and sends a beautifully formatted summary report straight to your private Discord server.
 
 ### ✨ Key Features
 
-* **Smart Sorting:** Automatically categorizes files by their extensions into designated folders.
-* **Automated Cleanup:** Deletes temporary or installer files (e.g., `.dmg`, `.tmp`, `.exe`) older than a set number of days.
-* **Smart Archiving:** Zips unused files that are older than 30 days to free up disk space.
-* **Cloud Backup Integration:** Uploads critical documents (like PDFs and DOCX files) directly to an AWS S3 bucket or Google Drive.
-* **Rule-Based Configuration:** Driven entirely by a `.yaml` or `.json` file, allowing complete customization of sorting rules and timelines.
-* **Notification System:** Sends automated summary reports to a Discord channel (via Webhooks) or via Email, detailing exactly what was moved, deleted, or backed up.
+* **Step 1: Smart Sorting:** Instantly categorizes files from your `Downloads` directory (like `.pdf`, `.docx`, `.jpg`, `.png`, `.zip`, `.jpeg`) into distinct folders automatically.
+* **Step 2: Automated Cleanup:** Identifies old compressed files sitting inside your `ZipFiles` folder and permanently deletes items older than 14 days to recover hard drive space.
+* **Step 3: Media Archiving:** Scans your loose `Pictures` folder, packs images older than 30 days into a single compressed `media_archive.zip` file, and clears out the originals.
+* **Step 4: Live Discord Summary Reports:** Gathers a detailed list of every single action performed by the butler (names of files moved, deleted, and archived) and posts an interactive summary directly to your Discord via Webhooks.
+
+---
 
 ## 🛠 Built With
 
-* **File System Manipulation:** `os`, `shutil`, `pathlib`
-* **Task Scheduling:** `schedule` / `cron`
-* **Cloud APIs:** `boto3` (AWS) / `google-api-python-client` (Google Drive)
-* **Notifications:** `requests` (Discord Webhooks), `smtplib` (Email)
+* **Core Language:** Python 3
+* **File System Operations:** `pathlib`, `shutil`
+* **Compression Engine:** `zipfile`
+* **Time Management:** `time`
+* **Network & Webhooks:** `requests`
 
 ---
 
 ## 🚀 Getting Started
 
-Follow these steps to get your Digital Butler up and running on your local machine.
+Follow these simple steps to run your own personal Digital Butler locally.
 
 ### Prerequisites
 
-* Python 3.8 or higher
-* A Discord Webhook URL (optional, for notifications)
-* AWS Credentials or Google Drive API Service Account (optional, for cloud backups)
+Make sure you have Python installed on your machine. You will also need a Discord server where you can create a Webhook URL.
 
-### Installation
+### Installation & Setup
 
-1. **Clone the repository:**
+#### 1. Clone the repository
+
 ```bash
-   git clone [https://github.com/yourusername/digital-butler.git](https://github.com/yourusername/digital-butler.git)
-   cd digital-butler
-   python main.py
+git clone https://github.com/tusharcancodehere/Digital_Butler.git
+cd Digital_Butler
+```
+
+#### 2. Install the required package
+
+Open your terminal and run:
+
+```bash
+pip install requests
+```
+
+#### 3. Configure your Discord Webhook
+
+* Open your Discord Server Settings.
+* Navigate to **Integrations → Webhooks**.
+* Create a new webhook.
+* Copy the webhook URL.
+* Paste it into the `DISCORD_WEBHOOK_URL` variable in `main.py`:
+
+```python
+DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/your-secret-link-here"
+```
+
+---
+
+## 🏃‍♂️ Running the Butler
+
+To run your workspace automation chores, execute the script from your terminal or click the **Run** button inside PyCharm:
+
+```bash
+python main.py
+```
