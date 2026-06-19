@@ -1,14 +1,16 @@
 import os
-import shutil # Utility functions for copying and archiving files and directory trees.
-import time # This helps to do time operations
+import shutil  # Utility functions for copying and archiving files and directory trees.
+import time  # This helps to do time operations
 import zipfile  # This helps us bundle files into a single zip
-from pathlib import Path #This module provides classes to represent abstract paths and concrete paths.
+from pathlib import Path  # This module provides classes to represent abstract paths and concrete paths.
+import requests  # To send data over the internet to Discord
 
 # ======= SETUP PATHS & RULES =======
 source_folder = Path.home() / "Downloads"
 zip_folder = Path.home() / "Downloads" / "ZipFiles"
 pictures_folder = Path.home() / "Pictures"
 archive_folder = Path.home() / "Documents" / "Archives"
+DISCORD_WEBHOOK_URL = "PASTE_YOUR_COPIED_DISCORD_URL_HERE"
 
 # ======= Rules for sorting =======
 sorting_rules = {
@@ -19,6 +21,11 @@ sorting_rules = {
     ".zip": zip_folder,
     ".jpeg": Path.home() / "Pictures" / "JPEGs",
 }
+
+# NEW: Blank lists to store our butler's activity logs
+moved_log = []
+deleted_log = []
+archived_log = []
 
 # STEP 1: SORT THE FILES
 
@@ -37,6 +44,9 @@ for item in source_folder.iterdir():
             destination_file_path = destination_folder / item.name
             shutil.move(str(item), str(destination_file_path))
             print(f"Moved: {item.name} -> to -> {destination_folder.name}")
+
+            # Record what was moved and where
+            moved_log.append(f"🔹 `{item.name}` ➡️ **{destination_folder.name}**")
 
 print("Sorting complete!\n")
 
@@ -71,6 +81,9 @@ if zip_folder.exists():
                 file_item.unlink()  # .unlink() is the Python way to delete a file
                 print(f"Deleted old file: {file_item.name}")
 
+                # Record what was deleted
+                deleted_log.append(f"❌ `{file_item.name}`")
+
 print("Cleanup complete!\n")
 
 # STEP 3: ARCHIVE OLD MEDIA
@@ -99,13 +112,59 @@ if pictures_folder.exists():
                 media_modified_time = media_item.stat().st_mtime
                 media_age_seconds = current_time - media_modified_time
 
-                if media_age_seconds >= max_media_age_seconds :
+                if media_age_seconds >= max_media_age_seconds:
                     # 1. Put a copy of the file inside the zip archive
-                    my_zip.write(media_item, arcname=media_item.name,)
+                    my_zip.write(media_item, arcname=media_item.name)
                     print(f"Archived: {media_item.name} -> added to zip archive")
+
+                    # Record what was archived
+                    archived_log.append(f"📦 `{media_item.name}`")
 
                     # 2. Safely delete the original file outside the zip
                     media_item.unlink()
 
 print("Archiving complete!\n")
+
+# STEP 4: DISCORD NOTIFICATION
+
+print("Compiling summary report for Discord...")
+
+# Build a dynamic message block out of our logs
+report_text = "🎩 **Digital Butler Activity Report** 🔔\n\n"
+
+# 1. Add details about Moved Files
+if moved_log:
+    report_text += "**📁 Files Sorted:**\n" + "\n".join(moved_log) + "\n\n"
+else:
+    report_text += "**📁 Files Sorted:** None\n\n"
+
+# 2. Add details about Deleted Files
+if deleted_log:
+    report_text += "**🗑️ Files Cleaned Up:**\n" + "\n".join(deleted_log) + "\n\n"
+else:
+    report_text += "**🗑️ Files Cleaned Up:** None\n\n"
+
+# 3. Add details about Archived Files
+if archived_log:
+    report_text += "**📦 Files Compressed to Archive:**\n" + "\n".join(archived_log) + "\n\n"
+else:
+    report_text += "**📦 Files Compressed to Archive:** None\n\n"
+
+# Wrap it in a single dictionary package for Discord
+butler_message = {
+    "content": report_text
+}
+
+# Send it over the internet!
+try:
+    response = requests.post(DISCORD_WEBHOOK_URL, json=butler_message)
+
+    if response.status_code == 204:
+        print("Detailed Discord notification sent successfully!")
+    else:
+        print(f"Discord replied with an error code: {response.status_code}")
+
+except Exception as e:
+    print(f"Could not connect to Discord. Error: {e}")
+
 print("Butler task complete!")
