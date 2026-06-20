@@ -10,7 +10,7 @@ source_folder = Path.home() / "Downloads"
 zip_folder = Path.home() / "Downloads" / "ZipFiles"
 pictures_folder = Path.home() / "Pictures"
 archive_folder = Path.home() / "Documents" / "Archives"
-DISCORD_WEBHOOK_URL = "PASTE_YOUR_COPIED_DISCORD_URL_HERE"
+DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1517472374822273168/QJ5VfhqudMOMq5MF5COT8F4WxkmyyVFTU652KkPZurz9w3bqvs_rCWCp3riR6O2oivh-"
 
 # ======= Rules for sorting =======
 sorting_rules = {
@@ -20,16 +20,81 @@ sorting_rules = {
     ".png": pictures_folder,
     ".zip": zip_folder,
     ".jpeg": Path.home() / "Pictures" / "JPEGs",
+    ".mp4": Path.home() / "Videos",
+    ".mp3": Path.home() / "Music",
+    ".txt": Path.home() / "Documents" / "TextFiles",
+    ".csv": Path.home() / "Documents" / "CSVFiles",
+    ".exe": Path.home() / "Documents" / "Executables"
 }
+
+# ======= Changeable thresholds =======
+# Adjust these values to control cleanup and archiving behavior.
+days_threshold = 14
+archive_threshold_days = 30
 
 # NEW: Blank lists to store our butler's activity logs
 moved_log = []
 deleted_log = []
 archived_log = []
 
+# Helper functions for Discord notifications
+
+def send_discord_notification(message_text):
+    if not DISCORD_WEBHOOK_URL or "PASTE_YOUR_COPIED_DISCORD_URL_HERE" in DISCORD_WEBHOOK_URL:
+        print("Discord webhook URL not set. Skipping Discord notification.")
+        return False
+
+    try:
+        response = requests.post(DISCORD_WEBHOOK_URL, json={"content": message_text})
+
+        if response.status_code == 204:
+            print("Discord notification sent successfully.")
+            return True
+
+        print(f"Discord replied with an error code: {response.status_code}")
+        return False
+
+    except Exception as e:
+        print(f"Could not connect to Discord. Error: {e}")
+        return False
+
+
+def build_discord_start_message():
+    return (
+        "🎩 **Digital Butler is starting** 🔔\n\n"
+        f"**Sorting:** Files from `{source_folder}` using the configured rules.\n"
+        f"**Cleanup:** Remove `.zip` files older than {days_threshold} days from `{zip_folder}`.\n"
+        f"**Archiving:** Compress pictures/media older than {archive_threshold_days} days from `{pictures_folder}`.\n\n"
+        "I will send a completion summary once the job is finished."
+    )
+
+
+def build_discord_report():
+    report = "🎩 **Digital Butler Activity Report** 🔔\n\n"
+
+    if moved_log:
+        report += "**📁 Files Sorted:**\n" + "\n".join(moved_log) + "\n\n"
+    else:
+        report += "**📁 Files Sorted:** _None_\n\n"
+
+    if deleted_log:
+        report += "**🗑️ Files Cleaned Up:**\n" + "\n".join(deleted_log) + "\n\n"
+    else:
+        report += "**🗑️ Files Cleaned Up:** _None_\n\n"
+
+    if archived_log:
+        report += "**📦 Files Archived:**\n" + "\n".join(archived_log) + "\n\n"
+    else:
+        report += "**📦 Files Archived:** _None_\n\n"
+
+    report += "---\n_This message was generated automatically by Digital Butler._"
+    return report
+
 # STEP 1: SORT THE FILES
 
 print(f"Scanning your Inventory: {source_folder}")
+
+send_discord_notification(build_discord_start_message())
 
 for item in source_folder.iterdir():
     if item.is_file():
@@ -53,9 +118,6 @@ print("Sorting complete!\n")
 # STEP 2: CLEAN UP OLD FILES
 
 print(f"Checking for old files to clean up in: {zip_folder}")
-
-# How old should a file be to delete it? (In days, you can change it here)
-days_threshold = 14
 
 # Convert days into seconds because Python measures file age in seconds
 # (60 seconds * 60 minutes * 24 hours = 1 day)
@@ -90,8 +152,7 @@ print("Cleanup complete!\n")
 
 print(f"Checking for media files to archive in: {pictures_folder}")
 
-# For testing, change it to 0 means "archive everything immediately". Change to 30 later!
-archive_threshold_days = 30
+# For testing, change it to 0 which means "archive everything immediately". Change to 30 later!
 max_media_age_seconds = archive_threshold_days * seconds_in_a_day
 
 # Create the Archives folder if it's missing
@@ -129,42 +190,6 @@ print("Archiving complete!\n")
 
 print("Compiling summary report for Discord...")
 
-# Build a dynamic message block out of our logs
-report_text = "🎩 **Digital Butler Activity Report** 🔔\n\n"
-
-# 1. Add details about Moved Files
-if moved_log:
-    report_text += "**📁 Files Sorted:**\n" + "\n".join(moved_log) + "\n\n"
-else:
-    report_text += "**📁 Files Sorted:** None\n\n"
-
-# 2. Add details about Deleted Files
-if deleted_log:
-    report_text += "**🗑️ Files Cleaned Up:**\n" + "\n".join(deleted_log) + "\n\n"
-else:
-    report_text += "**🗑️ Files Cleaned Up:** None\n\n"
-
-# 3. Add details about Archived Files
-if archived_log:
-    report_text += "**📦 Files Compressed to Archive:**\n" + "\n".join(archived_log) + "\n\n"
-else:
-    report_text += "**📦 Files Compressed to Archive:** None\n\n"
-
-# Wrap it in a single dictionary package for Discord
-butler_message = {
-    "content": report_text
-}
-
-# Send it over the internet!
-try:
-    response = requests.post(DISCORD_WEBHOOK_URL, json=butler_message)
-
-    if response.status_code == 204:
-        print("Detailed Discord notification sent successfully!")
-    else:
-        print(f"Discord replied with an error code: {response.status_code}")
-
-except Exception as e:
-    print(f"Could not connect to Discord. Error: {e}")
+send_discord_notification(build_discord_report())
 
 print("Butler task complete!")
